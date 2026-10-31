@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Pulse | AI Notice Organizer for College Hackathons</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2306b6d4%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z%22/><path d=%22M22 10v6%22/><path d=%22M6 12.5V16a6 3 0 0 0 12 0v-3.5%22/></svg>">
+  
+  <!-- Anti-flash Theme Initializer -->
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('campus_pulse_theme');
+        if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        } else {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            campus: {
+              dark: '#080c14',
+              card: 'rgba(15, 23, 42, 0.72)',
+              border: 'rgba(51, 65, 85, 0.5)',
+              accent: '#38bdf8',
+              neonPink: '#f43f5e',
+              neonPurple: '#a855f7',
+              neonCyan: '#06b6d4',
+              neonAmber: '#f59e0b',
+              neonEmerald: '#10b981'
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'glow-scan': 'glowScan 2s ease-in-out infinite',
+            'float': 'float 4s ease-in-out infinite',
+          },
+          keyframes: {
+            glowScan: {
+              '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.03)' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel for inline JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom Glassmorphism & Neon Glow Styles -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #060911;
+      color: #f1f5f9;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glassmorphism Classes */
+    .glass-card {
+      background: rgba(13, 20, 36, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-card-hover {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-hover:hover {
+      transform: translateY(-3px);
+      background: rgba(18, 28, 49, 0.78);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.6);
+    }
+
+    .glass-modal {
+      background: rgba(10, 15, 28, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Glow Badges */
+    .glow-urgent {
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 14px rgba(6, 182, 212, 0.3);
+    }
+    .glow-purple {
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.3);
+    }
+    .glow-amber {
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.3);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.4);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.6);
+    }
+
+    /* ==========================================================================
+       Light Mode Theme Styles (High-Contrast, Glassmorphism Clean Slate Palette)
+       ========================================================================== */
+    html.light body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+    }
+
+    html.light .bg-clip-text {
+      background-image: linear-gradient(to right, #0f172a, #1e293b, #0284c7) !important;
+    }
+
+    html.light header.glass-card {
+      background: rgba(255, 255, 255, 0.92) !important;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.95) !important;
+      box-shadow: 0 4px 20px 0 rgba(15, 23, 42, 0.04) !important;
+    }
+
+    html.light .brand-logo-box {
+      background-color: rgba(241, 245, 249, 0.9) !important;
+      border-color: rgba(203, 213, 225, 0.8) !important;
+    }
+    html.light .brand-logo-icon {
+      color: #0284c7 !important;
+    }
+
+    html.light .glass-card {
+      background: rgba(255, 255, 255, 0.88) !important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.9) !important;
+      box-shadow: 0 10px 30px 0 rgba(15, 23, 42, 0.05) !important;
+    }
+
+    html.light .glass-card-hover:hover {
+      background: #ffffff !important;
+      border-color: rgba(203, 213, 225, 0.95) !important;
+      box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.1) !important;
+    }
+
+    html.light .glass-modal {
+      background: rgba(255, 255, 255, 0.98) !important;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(226, 232, 240, 0.95) !important;
+      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.2) !important;
+    }
+
+    /* Headings and text in Light Mode */
+    html.light h1,
+    html.light h2,
+    html.light h3,
+    html.light h4 {
+      color: #0f172a !important;
+    }
+    html.light .text-slate-100 { color: #1e293b !important; }
+    html.light .text-slate-200 { color: #334155 !important; }
+    html.light .text-slate-300 { color: #475569 !important; }
+    html.light .text-slate-400 { color: #64748b !important; }
+    html.light .text-slate-500 { color: #94a3b8 !important; }
+
+    /* Containers and Panels in Light Mode */
+    html.light [class*="bg-slate-900\/"],
+    html.light [class*="bg-slate-900"] {
+      background-color: rgba(241, 245, 249, 0.8) !important;
+    }
+    html.light [class*="bg-slate-800\/"],
+    html.light [class*="bg-slate-800"] {
+      background-color: rgba(226, 232, 240, 0.65) !important;
+    }
+    html.light [class*="bg-slate-950\/"],
+    html.light [class*="bg-slate-950"] {
+      background-color: #f1f5f9 !important;
+    }
+    html.light [class*="border-slate-800\/"],
+    html.light [class*="border-slate-800"],
+    html.light [class*="border-slate-700\/"],
+    html.light [class*="border-slate-700"] {
+      border-color: rgba(226, 232, 240, 0.9) !important;
+    }
+
+    /* Form Inputs, Textareas, Selects */
+    html.light textarea,
+    html.light input[type="text"],
+    html.light select {
+      background-color: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    html.light textarea::placeholder,
+    html.light input::placeholder {
+      color: #94a3b8 !important;
+    }
+    html.light select option {
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+
+    /* Attention Today Emergency Banner in Light Mode */
+    html.light section[class*="from-rose-950"] {
+      background: linear-gradient(to right, rgba(255, 241, 242, 0.95), rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.95)) !important;
+      border-color: rgba(244, 63, 94, 0.4) !important;
+    }
+    html.light section[class*="from-rose-950"] h3 {
+      color: #9f1239 !important;
+    }
+
+    /* Active category pill in light mode */
+    html.light button.bg-slate-100 {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+      border-color: #0f172a !important;
+    }
+
+    /* Calendar Day Tiles in Light Mode */
+    html.light .min-h-\[78px\].bg-slate-900\/60,
+    html.light .min-h-\[96px\].bg-slate-900\/60 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+    }
+    html.light .min-h-\[78px\].bg-slate-800\/90,
+    html.light .min-h-\[96px\].bg-slate-800\/90 {
+      background-color: #e0f2fe !important;
+      border-color: #0284c7 !important;
+    }
+    html.light .min-h-\[78px\].bg-rose-950\/30,
+    html.light .min-h-\[96px\].bg-rose-950\/30 {
+      background-color: #fff1f2 !important;
+      border-color: #f43f5e !important;
+    }
+
+    /* Weekly Digest Modal colored sections in Light Mode */
+    html.light div.bg-rose-950\/20 {
+      background-color: #fff1f2 !important;
+      border-color: #fecdd3 !important;
+    }
+    html.light div.bg-cyan-950\/20 {
+      background-color: #ecfeff !important;
+      border-color: #a5f3fc !important;
+    }
+    html.light div.bg-purple-950\/20 {
+      background-color: #faf5ff !important;
+      border-color: #e9d5ff !important;
+    }
+
+    /* Solid CTA buttons keep their white text in Light Mode */
+    html.light button[class*="bg-gradient-to-r"],
+    html.light button.bg-rose-600,
+    html.light button.bg-emerald-600,
+    html.light button.bg-indigo-600,
+    html.light span.bg-rose-500,
+    html.light span.bg-rose-600 {
+      color: #ffffff !important;
+    }
+    html.light button[class*="bg-gradient-to-r"] *,
+    html.light button.bg-rose-600 *,
+    html.light button.bg-emerald-600 *,
+    html.light button.bg-indigo-600 * {
+      color: #ffffff !important;
+    }
+  </style>
+</head>
+<body class="selection:bg-cyan-500/30 selection:text-cyan-200">
+  <div id="root"></div>
+
+  <!-- Main React App Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- Audio Feedback Synth ---
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      init() {
+        if (!this.ctx && typeof window !== 'undefined') {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+      }
+      playChime(type = 'success') {
+        if (this.muted) return;
+        try {
+          this.init();
+          if (!this.ctx) return;
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          if (type === 'parse') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+          } else if (type === 'complete') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(660, now + 0.08);
+            osc.frequency.setValueAtTime(880, now + 0.16);
+            gain.gain.setValueAtTime(0.06, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc.start(now);
+            osc.stop(now + 0.35);
+          } else if (type === 'pop') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(350, now);
+            osc.frequency.exponentialRampToValueAtTime(550, now + 0.08);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            osc.start(now);
+            osc.stop(now + 0.12);
+          }
+        } catch(e) {
+          // Audio autoplay block catch
+        }
+      }
+    }
+    const sound = new SoundFX();
+
+    // --- Lucide-Style SVG Icon Library Component ---
+    const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+      const icons = {
+        zap: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
+        sparkles: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3zM2 2l2 2m18 18-2-2m0-18-2 2M2 22l2-2" />,
+        bell: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></>,
+        calendar: <><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></>,
+        list: <><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></>,
+        clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+        mapPin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>,
+        alertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></>,
+        checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+        tag: <><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/></>,
+        filter: <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>,
+        search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,
+        share: <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></>,
+        trash: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>,
+        externalLink: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></>,
+        plus: <><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></>,
+        x: <><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></>,
+        chevronRight: <polyline points="9 18 15 12 9 6"/>,
+        chevronLeft: <polyline points="15 18 9 12 15 6"/>,
+        bookOpen: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+        users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        award: <><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></>,
+        fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+        check: <polyline points="20 6 9 17 4 12"/>,
+        copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
+        volume2: <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></>,
+        volumeX: <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></>,
+        refresh: <><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></>,
+        flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>,
+        chevronDown: <polyline points="6 9 12 15 18 9"/>,
+        messageSquare: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>,
+        download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
+        info: <><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></>,
+        sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></>,
+        moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>,
+        graduationCap: <><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></>,
+        GraduationCap: <><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></>
+      };
+
+      const iconContent = icons[name] || icons.zap;
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={className}
+          {...props}
+        >
+          {iconContent}
+        </svg>
+      );
+    };
+
+    // --- Curated Sample WhatsApp Notices for Judge Quick Testing ---
+    const SAMPLE_NOTICES = [
+      {
+        id: "sample-1",
+        label: "🚨 Project Deadline (Urgent)",
+        text: `*🚨 ATTENTION 3rd Year CSE & IT Students!!* 🚨\n\nThe End-Term Capstone Project code repository & final report submission portal on Google Classroom is closing *TONIGHT at 11:59 PM sharp*.\n\n⚠️ Strict warning: No late submissions will be accepted under any circumstances. The viva voce examination will commence in *Lab 4 & 5 on Monday morning at 09:00 AM*. Ensure your presentation decks and GitHub repos are verified.\n\n- Prof. V. Sharma (HOD CSE)`
+      },
+      {
+        id: "sample-2",
+        label: "🚀 HackTech 2026 Hackathon",
+        text: `Hey everyone! 🎉 IEEE & GDSC are proud to bring you *HackTech 2026* — our 36-hour flagship hackathon with ₹1.5 Lakh prize pool! 💻🏆\n\n📅 *Date:* November 5, 2026\n⏰ *Time:* 10:00 AM onwards (Check-in starts 9 AM)\n📍 *Venue:* Main Seminar Hall 2 (Engineering Block)\n\nSnacks, energy drinks, and official swag kits are free for all shortlisted teams! Registration fee is ₹100 per team. Register on portal by Nov 3. For queries, contact Rahul (9876543210).`
+      },
+      {
+        id: "sample-3",
+        label: "⚠️ Rescheduled Exam Notice",
+        text: `*CRITICAL EXAMINATION NOTICE*\n\nPlease note: The Mid-Term Supplementary / Makeup examination for *Advanced Engineering Mathematics (Math-III)* scheduled earlier has been RESCHEDULED.\n\nNew Schedule:\n🗓 Date: Tomorrow, November 1, 2026\n🕒 Time: 02:00 PM - 04:00 PM\n📍 Venue: Auditorium Hall-A (Block 1)\n\nStudents must bring physical Hall Tickets and valid College ID cards. Entry after 2:15 PM will strictly not be permitted.\n- Controller of Examinations`
+      },
+      {
+        id: "sample-4",
+        label: "🎭 Drama Club Auditions",
+        text: `Lights, Camera, Acting! 🎭 The *Dramatics & Street Play Club 'Awaaz'* is hosting auditions for the Annual Inter-College Cultural Fest!\n\n📅 Date: Friday, November 6, 2026\n⏰ Time: 04:30 PM\n📍 Venue: Open Air Theatre (OAT)\n\nOpen to all branches and years! Prepare any 2-minute monologue in English or Hindi. Props are welcome. Come show your talent!`
+      },
+      {
+        id: "sample-5",
+        label: "💳 Fee Payment Window",
+        text: `*IMPORTANT NOTICE REGARDING SEMESTER FEE PAYMENT*\n\nThe last date for payment of Odd Semester tuition and hostel fees without late penalty has been extended up to *November 10, 2026*.\n\nPayment must be made online via SBI Collect portal or at Accounts Section (Counter 3) between 10:00 AM to 03:00 PM on working days. Defaulters will be charged ₹100 per day after deadline.\n- Finance Officer`
+      }
+    ];
+
+    // --- Preloaded Default Notices in Persistent Storage ---
+    const INITIAL_NOTICES = [
+      {
+        id: 'n-1',
+        title: 'Capstone Project Submission & Viva Prep',
+        originalText: SAMPLE_NOTICES[0].text,
+        date: '2026-10-31',
+        time: '11:59 PM',
+        venue: 'Google Classroom & Lab 4/5',
+        category: 'Deadline',
+        urgency: 'Urgent',
+        summary: 'Final submission deadline tonight on Google Classroom. Monday viva starts at 9:00 AM in Lab 4.',
+        actionItems: ['Upload final repo code', 'Complete PDF project report', 'Prepare slide deck for Monday viva'],
+        contact: 'Prof. V. Sharma (HOD CSE)',
+        completed: false,
+        createdAt: '2026-10-31T09:00:00.000Z'
+      },
+      {
+        id: 'n-2',
+        title: 'Math-III Makeup Exam Rescheduled',
+        originalText: SAMPLE_NOTICES[2].text,
+        date: '2026-11-01',
+        time: '02:00 PM',
+        venue: 'Auditorium Hall-A (Block 1)',
+        category: 'Academic',
+        urgency: 'Urgent',
+        summary: 'Supplementary exam moved to tomorrow 2:00 PM in Audi-A. Mandatory hall ticket & ID card required.',
+        actionItems: ['Print physical Hall Ticket', 'Carry College ID Card', 'Arrive before 1:45 PM'],
+        contact: 'Controller of Examinations',
+        completed: false,
+        createdAt: '2026-10-30T14:00:00.000Z'
+      },
+      {
+        id: 'n-3',
+        title: 'HackTech 2026 Flagship 36h Hackathon',
+        originalText: SAMPLE_NOTICES[1].text,
+        date: '2026-11-05',
+        time: '10:00 AM',
+        venue: 'Seminar Hall 2 (Eng Block)',
+        category: 'Event',
+        urgency: 'Medium',
+        summary: '36-hour hackathon with ₹1.5L prize pool. Check-in 9 AM, snacks and swag kits provided.',
+        actionItems: ['Register 3-4 person team', 'Pay ₹100 registration fee', 'Bring laptop & chargers'],
+        contact: 'Rahul (9876543210)',
+        completed: false,
+        createdAt: '2026-10-29T11:00:00.000Z'
+      },
+      {
+        id: 'n-4',
+        title: 'Awaaz Dramatics Club Monologue Auditions',
+        originalText: SAMPLE_NOTICES[3].text,
+        date: '2026-11-06',
+        time: '04:30 PM',
+        venue: 'Open Air Theatre (OAT)',
+        category: 'Club',
+        urgency: 'Low',
+        summary: 'Auditions for Annual Cultural Fest street play and drama. 2-minute monologue in Hindi or English.',
+        actionItems: ['Prepare 2-minute monologue', 'Register at venue table'],
+        contact: 'Awaaz Team',
+        completed: false,
+        createdAt: '2026-10-28T16:00:00.000Z'
+      },
+      {
+        id: 'n-5',
+        title: 'Semester & Hostel Fee Payment Extension',
+        originalText: SAMPLE_NOTICES[4].text,
+        date: '2026-11-10',
+        time: '03:00 PM',
+        venue: 'SBI Collect / Accounts Counter 3',
+        category: 'General',
+        urgency: 'Medium',
+        summary: 'Extended deadline for odd semester tuition fee without late fine. Pay online or offline.',
+        actionItems: ['Check fee dues on portal', 'Pay via SBI Collect', 'Save transaction receipt'],
+        contact: 'Finance Officer',
+        completed: false,
+        createdAt: '2026-10-27T10:00:00.000Z'
+      }
+    ];
+
+    // --- AI Parsing Logic (Comprehensive NLP & Heuristics) ---
+    function parseNoticeWithAI(rawText) {
+      const lower = rawText.toLowerCase();
+      
+      // 1. Detect Category
+      let category = 'General';
+      if (/exam|viva|quiz|syllabus|lecture|class|assignment|supplementary|mid-term|end-term|academic|prof\b|hod\b/.test(lower)) {
+        category = 'Academic';
+      }
+      if (/deadline|due date|closing|submission|submit by|last date|portal closes|sharp\b|tonight\b/.test(lower)) {
+        category = 'Deadline';
+      }
+      if (/hackathon|fest|cultural|workshop|webinar|symposium|conference|championship|tournament|sports/.test(lower)) {
+        category = 'Event';
+      }
+      if (/club|audition|society|recruitment|gdsc|ieee|awaaz|rotaract|monologue|choir|dance/.test(lower)) {
+        category = 'Club';
+      }
+
+      // 2. Detect Urgency
+      let urgency = 'Low';
+      if (/urgent|critical|strict|warning|immediate|tonight|today|mandatory|penalty|defaulters|crucial|sharp\b/.test(lower)) {
+        urgency = 'Urgent';
+      } else if (/tomorrow|soon|prize pool|extended|fee|important|register by/.test(lower)) {
+        urgency = 'Medium';
+      }
+
+      // 3. Extract Time
+      let time = '11:59 PM';
+      const timeMatch = rawText.match(/(\b\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)\b|\b\d{1,2}:\d{2}\b)/);
+      if (timeMatch) {
+        time = timeMatch[0].toUpperCase();
+      }
+
+      // 4. Extract Date relative to Reference Date (Today = Oct 31, 2026)
+      const baseDate = new Date(2026, 9, 31); // 2026-10-31
+      let parsedDate = '2026-10-31';
+
+      if (lower.includes('tonight') || lower.includes('today')) {
+        parsedDate = '2026-10-31';
+      } else if (lower.includes('tomorrow')) {
+        parsedDate = '2026-11-01';
+      } else if (lower.includes('monday')) {
+        parsedDate = '2026-11-02';
+      } else if (lower.includes('friday')) {
+        parsedDate = '2026-11-06';
+      } else {
+        // Look for e.g. "5th Nov", "November 5", "10th Nov", "Nov 10", "10/11/2026"
+        const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+        const dayMonthMatch = rawText.match(/(\d{1,2})(?:st|nd|rd|th)?\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s*,?\s*(\d{4}))?/i) ||
+                              rawText.match(/(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,?\s*(\d{4}))?/i);
+        
+        if (dayMonthMatch) {
+          let day, monthStr, year = '2026';
+          if (isNaN(parseInt(dayMonthMatch[1]))) {
+            monthStr = dayMonthMatch[1].substring(0, 3).toLowerCase();
+            day = dayMonthMatch[2];
+            if (dayMonthMatch[3]) year = dayMonthMatch[3];
+          } else {
+            day = dayMonthMatch[1];
+            monthStr = dayMonthMatch[2].substring(0, 3).toLowerCase();
+            if (dayMonthMatch[3]) year = dayMonthMatch[3];
+          }
+          const monthNum = (monthMap[monthStr] !== undefined ? monthMap[monthStr] + 1 : 11).toString().padStart(2, '0');
+          parsedDate = `${year}-${monthNum}-${day.padStart(2, '0')}`;
+        }
+      }
+
+      // 5. Extract Venue
+      let venue = 'Campus Main / Online';
+      const venuePatterns = [
+        /(?:venue|location|at|in)\s*[:\-]?\s*([A-Za-z0-9\s&()\/'-]{4,35}?)(?=\n|\.|\,|$|time|date|timing)/i,
+        /(seminar hall\s*\d*|auditorium\s*[A-Za-z0-9-]*|lab\s*\d+(?:\s*&\s*\d+)?|open air theatre|oat|classroom|sbi collect|accounts section|audi-a|audi-b)/i
+      ];
+      for (const pattern of venuePatterns) {
+        const match = rawText.match(pattern);
+        if (match && match[1]) {
+          venue = match[1].trim().replace(/^[:\-\s]+/, '');
+          break;
+        }
+      }
+
+      // 6. Extract Contact
+      let contact = '';
+      const contactMatch = rawText.match(/(?:contact|queries|convenor|prof|hod|officer)[:\s\-]*([A-Za-z0-9\s.()+]{5,35})/i);
+      if (contactMatch) {
+        contact = contactMatch[1].trim().split('\n')[0];
+      }
+
+      // 7. Synthesize Title
+      let title = 'Campus Notice';
+      const firstLine = rawText.split('\n')[0].replace(/[*#_~🚨⚠️🎉💻🏆🎭💳]/g, '').trim();
+      if (firstLine.length > 5 && firstLine.length < 65) {
+        title = firstLine.replace(/^(attention|critical|important notice|hey everyone|notice regarding)\s*[:\-]?\s*/i, '').trim();
+        if (title.length < 4) title = 'Important Campus Update';
+      } else {
+        if (category === 'Deadline') title = 'Urgent Assignment / Project Deadline';
+        else if (category === 'Event') title = 'Campus Hackathon / Tech Event';
+        else if (category === 'Academic') title = 'Academic Schedule & Examination Notice';
+        else if (category === 'Club') title = 'Club Activity & Audition Notice';
+        else title = 'Official University Announcement';
+      }
+      // Capitalize nicely
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+
+      // 8. Action Items
+      const actionItems = [];
+      const lines = rawText.split('\n');
+      for (const line of lines) {
+        const clean = line.replace(/[*#_~•\-]/g, '').trim();
+        if (/must|bring|submit|register|upload|prepare|pay|verify|check-in/i.test(clean) && clean.length > 10 && clean.length < 80) {
+          actionItems.push(clean);
+          if (actionItems.length >= 3) break;
+        }
+      }
+      if (actionItems.length === 0) {
+        actionItems.push('Review notice details carefully', 'Mark in personal calendar');
+      }
+
+      // 9. Short Summary
+      const summary = rawText
+        .replace(/[*#_~🚨⚠️🎉💻🏆🎭💳]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 160) + '...';
+
+      return {
+        title,
+        date: parsedDate,
+        time,
+        venue,
+        category,
+        urgency,
+        summary,
+        actionItems,
+        contact: contact || 'Campus Administration'
+      };
+    }
+
+    // --- Helper: Format human date ---
+    function formatHumanDate(dateStr) {
+      if (!dateStr) return '';
+      try {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      } catch(e) {
+        return dateStr;
+      }
+    }
+
+    // --- Helper: Get Notice Timeline Status ---
+    function getNoticeStatus(dateStr) {
+      const today = '2026-10-31';
+      if (dateStr === today) return { type: 'today', label: 'Due Today', color: 'rose' };
+      if (dateStr < today) return { type: 'expired', label: 'Expired', color: 'slate' };
+      
+      const [y1, m1, d1] = today.split('-').map(Number);
+      const [y2, m2, d2] = dateStr.split('-').map(Number);
+      const diffDays = Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) return { type: 'tomorrow', label: 'Tomorrow', color: 'amber' };
+      if (diffDays <= 7) return { type: 'upcoming', label: `In ${diffDays} days`, color: 'cyan' };
+      return { type: 'future', label: `In ${diffDays} days`, color: 'emerald' };
+    }
+
+    // --- Main App Component ---
+    function CampusPulseApp() {
+      // LocalStorage State
+      const [notices, setNotices] = useState(() => {
+        try {
+          const saved = localStorage.getItem('campus_pulse_notices_v2');
+          return saved ? JSON.parse(saved) : INITIAL_NOTICES;
+        } catch(e) {
+          return INITIAL_NOTICES;
+        }
+      });
+
+      // Save to localStorage
+      useEffect(() => {
+        try {
+          localStorage.setItem('campus_pulse_notices_v2', JSON.stringify(notices));
+        } catch(e) {
+          console.error('Failed to save to localStorage', e);
+        }
+      }, [notices]);
+
+      // Smart Parser Input States
+      const [rawInput, setRawInput] = useState('');
+      const [isParsing, setIsParsing] = useState(false);
+      const [parsingStep, setParsingStep] = useState('');
+      const [parsedPreview, setParsedPreview] = useState(null);
+      const [soundMuted, setSoundMuted] = useState(false);
+
+      // View Filters & Modes
+      const [currentView, setCurrentView] = useState('list'); // 'list' | 'calendar'
+      const [activeCategory, setActiveCategory] = useState('All');
+      const [activeStatusFilter, setActiveStatusFilter] = useState('All'); // 'All' | 'Today' | 'Upcoming' | 'Urgent'
+      const [searchQuery, setSearchQuery] = useState('');
+      const [sortBy, setSortBy] = useState('dateAsc'); // 'dateAsc' | 'dateDesc' | 'urgency' | 'newest'
+
+      // Modals & UI Toggles
+      const [showDigestModal, setShowDigestModal] = useState(false);
+      const [digestCopied, setDigestCopied] = useState(false);
+      const [expandedOriginalId, setExpandedOriginalId] = useState(null);
+      const [toastMsg, setToastMsg] = useState(null);
+      const [selectedCalendarDate, setSelectedCalendarDate] = useState('2026-10-31');
+      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+      const [editingNotice, setEditingNotice] = useState(null);
+      const [showSampleDropdown, setShowSampleDropdown] = useState(false);
+
+      // Theme State (Dark / Light) - Default: Dark Mode
+      const [theme, setTheme] = useState(() => {
+        try {
+          const saved = localStorage.getItem('campus_pulse_theme');
+          return saved === 'light' ? 'light' : 'dark';
+        } catch(e) {
+          return 'dark';
+        }
+      });
+
+      // Synchronize theme with html element class and localStorage
+      useEffect(() => {
+        try {
+          localStorage.setItem('campus_pulse_theme', theme);
+        } catch(e) {}
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      }, [theme]);
+
+      const toggleTheme = () => {
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
+        sound.playChime('pop');
+        showToast(nextTheme === 'dark' ? '🌙 Dark Mode Activated' : '☀️ Light Mode Activated');
+      };
+
+      // Sound mute sync
+      useEffect(() => {
+        sound.muted = soundMuted;
+      }, [soundMuted]);
+
+      // Toast auto-clear
+      const showToast = (message, type = 'success') => {
+        setToastMsg({ message, type });
+        setTimeout(() => setToastMsg(null), 3200);
+      };
+
+      // Handle AI Extraction with simulated smart steps
+      const handleExtractAI = () => {
+        if (!rawInput.trim()) {
+          showToast('Please paste a WhatsApp message or select a sample notice first.', 'error');
+          return;
+        }
+
+        setIsParsing(true);
+        sound.playChime('pop');
+        setParsingStep('⚡ Scanning raw text & tokens...');
+
+        setTimeout(() => {
+          setParsingStep('🧠 Resolving dates, deadlines & temporal anchors...');
+        }, 300);
+
+        setTimeout(() => {
+          setParsingStep('📍 Extracting venues, contacts & action checklists...');
+        }, 650);
+
+        setTimeout(() => {
+          const parsed = parseNoticeWithAI(rawInput);
+          setParsedPreview(parsed);
+          setIsParsing(false);
+          setParsingStep('');
+          sound.playChime('parse');
+          if (window.confetti) {
+            window.confetti({ particleCount: 35, spread: 60, origin: { y: 0.6 } });
+          }
+        }, 950);
+      };
+
+      // Confirm & Save Parsed Notice
+      const handleConfirmSaveNotice = (customData = null) => {
+        const toSave = customData || parsedPreview;
+        if (!toSave) return;
+
+        const newNotice = {
+          id: 'notice-' + Date.now(),
+          title: toSave.title,
+          originalText: rawInput || toSave.originalText || 'Imported via Quick Action',
+          date: toSave.date,
+          time: toSave.time,
+          venue: toSave.venue,
+          category: toSave.category,
+          urgency: toSave.urgency,
+          summary: toSave.summary,
+          actionItems: toSave.actionItems || [],
+          contact: toSave.contact || 'Campus Administration',
+          completed: false,
+          createdAt: new Date().toISOString()
+        };
+
+        setNotices(prev => [newNotice, ...prev]);
+        setParsedPreview(null);
+        setRawInput('');
+        sound.playChime('complete');
+        showToast(`🎉 "${newNotice.title}" added to your pulse board!`);
+      };
+
+      // Quick Load Sample WhatsApp
+      const handleLoadSample = (sample) => {
+        setRawInput(sample.text);
+        sound.playChime('pop');
+        showToast(`Loaded: "${sample.label}"`);
+      };
+
+      // Instant 1-Click Load & Parse for Judges
+      const handleQuickParseSample = (sample) => {
+        setRawInput(sample.text);
+        setIsParsing(true);
+        setParsingStep('⚡ Instant parsing for judge review...');
+        setTimeout(() => {
+          const parsed = parseNoticeWithAI(sample.text);
+          setParsedPreview(parsed);
+          setIsParsing(false);
+          sound.playChime('parse');
+        }, 400);
+      };
+
+      // Toggle notice completion
+      const handleToggleComplete = (id) => {
+        setNotices(prev => prev.map(n => {
+          if (n.id === id) {
+            const nextState = !n.completed;
+            if (nextState) sound.playChime('complete');
+            return { ...n, completed: nextState };
+          }
+          return n;
+        }));
+      };
+
+      // Delete notice
+      const handleDeleteNotice = (id) => {
+        setNotices(prev => prev.filter(n => n.id !== id));
+        showToast('Notice removed from board', 'info');
+      };
+
+      // Restore Demo Data
+      const handleResetDemoData = () => {
+        setNotices(INITIAL_NOTICES);
+        setRawInput('');
+        setParsedPreview(null);
+        sound.playChime('pop');
+        showToast('Restored original sample notices!');
+      };
+
+      // Calendar .ICS Export
+      const handleDownloadICS = (notice) => {
+        try {
+          const cleanDate = notice.date.replace(/-/g, '');
+          const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Campus Pulse//College Hackathon Notice//EN',
+            'BEGIN:VEVENT',
+            `SUMMARY:${notice.title.replace(/[,;]/g, ' ')}`,
+            `DESCRIPTION:${notice.summary.replace(/\n/g, ' ')} | Venue: ${notice.venue}`,
+            `LOCATION:${notice.venue}`,
+            `DTSTART;VALUE=DATE:${cleanDate}`,
+            `DTEND;VALUE=DATE:${cleanDate}`,
+            'STATUS:CONFIRMED',
+            'END:VEVENT',
+            'END:VCALENDAR'
+          ].join('\r\n');
+
+          const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.setAttribute('download', `${notice.title.slice(0, 20).replace(/\s+/g, '_')}.ics`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('📅 Calendar event (.ics) downloaded!');
+        } catch(e) {
+          showToast('Unable to export calendar file', 'error');
+        }
+      };
+
+      // Copy summary to clipboard
+      const handleCopySummary = (notice) => {
+        const text = `📌 *${notice.title}*\n🗓 Date: ${formatHumanDate(notice.date)} at ${notice.time}\n📍 Venue: ${notice.venue}\n🏷 Category: ${notice.category} (${notice.urgency} Urgency)\n\n📝 ${notice.summary}\n\n👉 Extracted via Campus Pulse`;
+        navigator.clipboard.writeText(text);
+        showToast('📋 Clean summary copied to clipboard!');
+      };
+
+      // Counts and Categories
+      const categories = ['All', 'Academic', 'Event', 'Deadline', 'Club', 'General'];
+
+      const categoryCounts = useMemo(() => {
+        const counts = { All: notices.length };
+        categories.forEach(c => {
+          if (c !== 'All') {
+            counts[c] = notices.filter(n => n.category.toLowerCase() === c.toLowerCase()).length;
+          }
+        });
+        return counts;
+      }, [notices]);
+
+      // Filtered Notices
+      const filteredNotices = useMemo(() => {
+        return notices.filter(n => {
+          // Category filter
+          if (activeCategory !== 'All' && n.category.toLowerCase() !== activeCategory.toLowerCase()) {
+            return false;
+          }
+          // Status filter
+          const status = getNoticeStatus(n.date);
+          if (activeStatusFilter === 'Today' && status.type !== 'today') return false;
+          if (activeStatusFilter === 'Upcoming' && status.type !== 'upcoming' && status.type !== 'tomorrow') return false;
+          if (activeStatusFilter === 'Urgent' && n.urgency !== 'Urgent') return false;
+          
+          // Search query
+          if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            const matchTitle = n.title.toLowerCase().includes(q);
+            const matchVenue = n.venue.toLowerCase().includes(q);
+            const matchSummary = n.summary.toLowerCase().includes(q);
+            const matchCategory = n.category.toLowerCase().includes(q);
+            if (!matchTitle && !matchVenue && !matchSummary && !matchCategory) return false;
+          }
+          return true;
+        }).sort((a, b) => {
+          if (sortBy === 'dateAsc') return a.date.localeCompare(b.date);
+          if (sortBy === 'dateDesc') return b.date.localeCompare(a.date);
+          if (sortBy === 'urgency') {
+            const weight = { Urgent: 3, Medium: 2, Low: 1 };
+            return (weight[b.urgency] || 0) - (weight[a.urgency] || 0);
+          }
+          if (sortBy === 'newest') return (new Date(b.createdAt) - new Date(a.createdAt));
+          return 0;
+        });
+      }, [notices, activeCategory, activeStatusFilter, searchQuery, sortBy]);
+
+      // Items requiring immediate attention today
+      const attentionTodayNotices = useMemo(() => {
+        return notices.filter(n => n.date === '2026-10-31' && !n.completed);
+      }, [notices]);
+
+      // Group notices for weekly digest
+      const weeklyDigest = useMemo(() => {
+        const todayStr = '2026-10-31';
+        const urgentItems = notices.filter(n => n.urgency === 'Urgent' && !n.completed);
+        const academicItems = notices.filter(n => n.category === 'Academic' && !n.completed);
+        const eventItems = notices.filter(n => (n.category === 'Event' || n.category === 'Club') && !n.completed);
+        const upcomingDeadlines = notices.filter(n => n.category === 'Deadline' && !n.completed);
+
+        return {
+          totalActive: notices.filter(n => !n.completed).length,
+          urgentCount: urgentItems.length,
+          urgentItems,
+          academicItems,
+          eventItems,
+          upcomingDeadlines
+        };
+      }, [notices]);
+
+      // Copy weekly digest for WhatsApp groups
+      const handleCopyWeeklyDigest = () => {
+        let text = `📢 *CAMPUS PULSE — WEEKLY STUDENT BRIEFING*\n*Week of Oct 31 – Nov 7, 2026*\n\n`;
+        text += `⚡ *CRITICAL DEADLINES & IMMEDIATE ACTION:*\n`;
+        if (weeklyDigest.urgentItems.length > 0) {
+          weeklyDigest.urgentItems.forEach(item => {
+            text += `• *${item.title}*\n  ⏳ Due: ${formatHumanDate(item.date)} at ${item.time}\n  📍 ${item.venue}\n`;
+          });
+        } else {
+          text += `• No critical emergencies pending! You're on track.\n`;
+        }
+
+        text += `\n🎓 *ACADEMIC & EXAMS:*\n`;
+        if (weeklyDigest.academicItems.length > 0) {
+          weeklyDigest.academicItems.forEach(item => {
+            text += `• *${item.title}* (${formatHumanDate(item.date)} - ${item.venue})\n`;
+          });
+        } else {
+          text += `• Regular semester lectures scheduled.\n`;
+        }
+
+        text += `\n🎉 *EVENTS & CLUBS:*\n`;
+        if (weeklyDigest.eventItems.length > 0) {
+          weeklyDigest.eventItems.forEach(item => {
+            text += `• *${item.title}* (${item.date === '2026-11-05' ? 'HackTech Hackathon' : item.venue})\n`;
+          });
+        } else {
+          text += `• Check back for upcoming society meets.\n`;
+        }
+
+        text += `\n💡 _Generated automatically with Campus Pulse AI Parser_`;
+
+        navigator.clipboard.writeText(text);
+        setDigestCopied(true);
+        setTimeout(() => setDigestCopied(false), 2500);
+        showToast('📋 Executive WhatsApp Digest copied!');
+      };
+
+      // Visual Calendar Days Generator for November 2026
+      const calendarDays = useMemo(() => {
+        // Oct 26 to Nov 30 grid
+        const days = [];
+        // October padding days (Oct 26 - Oct 31)
+        for (let d = 26; d <= 31; d++) {
+          const dateStr = `2026-10-${d}`;
+          const dayNotices = notices.filter(n => n.date === dateStr);
+          days.push({
+            dayNum: d,
+            month: 'Oct',
+            dateStr,
+            isCurrentMonth: false,
+            isToday: dateStr === '2026-10-31',
+            notices: dayNotices
+          });
+        }
+        // November days (1 - 30)
+        for (let d = 1; d <= 30; d++) {
+          const dPad = d.toString().padStart(2, '0');
+          const dateStr = `2026-11-${dPad}`;
+          const dayNotices = notices.filter(n => n.date === dateStr);
+          days.push({
+            dayNum: d,
+            month: 'Nov',
+            dateStr,
+            isCurrentMonth: true,
+            isToday: false,
+            notices: dayNotices
+          });
+        }
+        return days;
+      }, [notices]);
+
+      // Category color map
+      const getCategoryStyles = (cat) => {
+        switch(cat) {
+          case 'Academic':
+            return {
+              badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+              glow: 'glow-cyan',
+              dot: 'bg-cyan-400',
+              iconName: 'bookOpen'
+            };
+          case 'Event':
+            return {
+              badge: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+              glow: 'glow-purple',
+              dot: 'bg-purple-400',
+              iconName: 'sparkles'
+            };
+          case 'Deadline':
+            return {
+              badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+              glow: 'glow-amber',
+              dot: 'bg-amber-400',
+              iconName: 'clock'
+            };
+          case 'Club':
+            return {
+              badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+              glow: 'glow-emerald',
+              dot: 'bg-emerald-400',
+              iconName: 'users'
+            };
+          default:
+            return {
+              badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+              glow: '',
+              dot: 'bg-blue-400',
+              iconName: 'tag'
+            };
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col pb-20">
+          
+          {/* Top Floating Toast Notification */}
+          {toastMsg && (
+            <div className="fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl glass-modal border border-cyan-500/40 text-slate-100 shadow-2xl animate-bounce">
+              <span className="p-1 rounded-lg bg-cyan-500/20 text-cyan-400">
+                <Icon name="sparkles" className="w-5 h-5" />
+              </span>
+              <span className="text-sm font-medium">{toastMsg.message}</span>
+            </div>
+          )}
+
+          {/* Sticky Header / Navbar */}
+          <header className="sticky top-0 z-40 w-full glass-card border-b border-slate-800/80 px-4 lg:px-8 py-3.5 backdrop-blur-xl">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+              
+              {/* Brand Logo */}
+              <div className="flex items-center gap-3">
+                <div className="brand-logo-box flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800/60 border border-slate-700/60 shadow-sm transition-colors">
+                  <Icon name="GraduationCap" className="brand-logo-icon w-5 h-5 text-cyan-300 transition-colors" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">
+                      Campus Pulse
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 hidden sm:block">
+                    AI Student Notice Organizer & WhatsApp Digest
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons: Weekly Digest, Mute Sound, Reset */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                
+                {/* Current Simulated Date Pill */}
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
+                  <Icon name="calendar" className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>College Today: <strong className="text-slate-100 font-semibold">Oct 31, 2026</strong></span>
+                </div>
+
+                {/* High Impact Weekly Digest Button */}
+                <button
+                  onClick={() => setShowDigestModal(true)}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all transform active:scale-95 cursor-pointer"
+                  title="Generate weekly executive digest"
+                >
+                  <Icon name="sparkles" className="w-4 h-4 text-amber-300 animate-spin-slow" />
+                  <span className="hidden sm:inline">What do I need to know this week?</span>
+                  <span className="sm:hidden">Weekly Digest</span>
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+                  </span>
+                </button>
+
+                {/* Sound Toggle Button */}
+                <button
+                  onClick={() => setSoundMuted(!soundMuted)}
+                  className={`p-2 rounded-lg border transition-colors cursor-pointer ${soundMuted ? 'border-slate-700 text-slate-500 bg-slate-900' : 'border-slate-700 text-cyan-400 bg-slate-800/80'}`}
+                  title={soundMuted ? "Unmute audio chimes" : "Mute audio chimes"}
+                >
+                  <Icon name={soundMuted ? "volumeX" : "volume2"} className="w-4 h-4" />
+                </button>
+
+                {/* Demo Data Reset for Judges */}
+                <button
+                  onClick={handleResetDemoData}
+                  className="p-2 rounded-lg border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 bg-slate-900/80 transition-colors cursor-pointer"
+                  title="Reset to default sample data for judging"
+                >
+                  <Icon name="refresh" className="w-4 h-4" />
+                </button>
+
+                {/* Sleek Dark / Light Theme Toggle Switch */}
+                <button
+                  onClick={toggleTheme}
+                  className={`p-2 rounded-lg border transition-all duration-300 cursor-pointer ${
+                    theme === 'dark'
+                      ? 'border-slate-800 hover:border-amber-400/60 hover:ring-2 hover:ring-amber-400/30 text-amber-400 hover:text-amber-300 bg-slate-900/80 hover:shadow-[0_0_14px_rgba(251,191,36,0.35)]'
+                      : 'border-slate-300 hover:border-indigo-500/60 hover:ring-2 hover:ring-indigo-500/30 text-indigo-600 hover:text-indigo-700 bg-white hover:shadow-[0_0_14px_rgba(99,102,241,0.25)]'
+                  }`}
+                  title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label="Toggle theme mode"
+                >
+                  <Icon
+                    name={theme === 'dark' ? "sun" : "moon"}
+                    className="w-4 h-4 transition-transform duration-300 hover:rotate-12"
+                  />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Container */}
+          <main className="max-w-7xl mx-auto px-4 lg:px-8 pt-8 w-full space-y-8">
+            
+            {/* Attention Today — Clean Integrated Card */}
+            {attentionTodayNotices.length > 0 && (
+              <section className="glass-card rounded-xl border-l-4 border-l-indigo-500 p-4 sm:p-5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Icon name="alertTriangle" className="w-5 h-5 text-indigo-400 shrink-0" />
+                    <div>
+                      <p className="text-xs text-slate-400 font-medium">
+                        {attentionTodayNotices.length} deadline{attentionTodayNotices.length > 1 ? 's' : ''} closing today
+                      </p>
+                      <h3 className="text-sm sm:text-base font-semibold text-white mt-0.5">
+                        {attentionTodayNotices[0].title}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {attentionTodayNotices[0].venue} · {attentionTodayNotices[0].time}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end md:self-auto">
+                    <button
+                      onClick={() => handleToggleComplete(attentionTodayNotices[0].id)}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Icon name="check" className="w-3.5 h-3.5" />
+                      <span>Done</span>
+                    </button>
+                    <button
+                      onClick={() => handleDownloadICS(attentionTodayNotices[0])}
+                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/60 transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Icon name="calendar" className="w-3.5 h-3.5" />
+                      <span>Add to Calendar</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* SECTION 1: Smart Input (AI Notice Parser) */}
+            <section className="glass-card rounded-xl p-5 sm:p-7">
+
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                    <Icon name="sparkles" className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-white">
+                      Paste a Notice
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      WhatsApp forwards, emails, or event posters — AI extracts the structured details.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sample Data Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSampleDropdown(prev => !prev)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 transition-all cursor-pointer"
+                  >
+                    <Icon name="fileText" className="w-3.5 h-3.5" />
+                    <span>Load Sample</span>
+                    <Icon name="chevronDown" className="w-3 h-3" />
+                  </button>
+
+                  {showSampleDropdown && (
+                    <div className="absolute right-0 mt-1.5 w-56 py-1.5 rounded-xl glass-modal border border-slate-700/60 shadow-2xl z-20">
+                      {SAMPLE_NOTICES.map((sample) => (
+                        <button
+                          key={sample.id}
+                          onClick={() => { handleLoadSample(sample); setShowSampleDropdown(false); }}
+                          className="w-full text-left px-3.5 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+                        >
+                          {sample.label}
+                        </button>
+                      ))}
+                      <div className="border-t border-slate-800 mt-1 pt-1">
+                        <button
+                          onClick={() => { handleQuickParseSample(SAMPLE_NOTICES[0]); setShowSampleDropdown(false); }}
+                          className="w-full text-left px-3.5 py-2 text-xs text-indigo-300 hover:text-indigo-200 hover:bg-slate-800/80 transition-colors cursor-pointer font-medium flex items-center gap-1.5"
+                        >
+                          <Icon name="zap" className="w-3 h-3" />
+                          <span>Instant Parse (Demo)</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Textarea */}
+              <div className="relative">
+                <textarea
+                  rows="3"
+                  value={rawInput}
+                  onChange={(e) => setRawInput(e.target.value)}
+                  placeholder="Paste an unstructured notice here…"
+                  className="w-full rounded-lg bg-slate-900/70 border border-slate-700/60 px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/70 focus:ring-1 focus:ring-indigo-500/30 transition-all resize-y"
+                ></textarea>
+
+                {rawInput && (
+                  <button
+                    onClick={() => setRawInput('')}
+                    className="absolute top-2.5 right-2.5 p-1 rounded-md text-slate-500 hover:text-white hover:bg-slate-700 transition-colors"
+                    title="Clear"
+                  >
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action Row */}
+              <div className="flex items-center justify-between gap-3 mt-3">
+                <div className="text-xs text-slate-500">
+                  {isParsing ? (
+                    <span className="flex items-center gap-2 text-indigo-300 font-medium">
+                      <Icon name="refresh" className="w-3.5 h-3.5 animate-spin" />
+                      {parsingStep}
+                    </span>
+                  ) : null}
+                </div>
+
+                <button
+                  onClick={handleExtractAI}
+                  disabled={isParsing || !rawInput.trim()}
+                  className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 transition-all active:scale-[0.97] cursor-pointer"
+                >
+                  <Icon name="sparkles" className={`w-4 h-4 ${isParsing ? 'animate-spin' : ''}`} />
+                  <span>{isParsing ? 'Extracting…' : 'Extract with AI'}</span>
+                </button>
+              </div>
+
+              {/* AI Parsed Preview */}
+              {parsedPreview && (
+                <div className="mt-5 p-5 rounded-xl border border-indigo-500/30 bg-slate-900/80">
+                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <Icon name="checkCircle" className="w-4 h-4 text-indigo-400" />
+                      <h4 className="text-sm font-semibold text-white">Extracted Notice — Verify & Add</h4>
+                    </div>
+                    <button
+                      onClick={() => setParsedPreview(null)}
+                      className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                    >
+                      <Icon name="x" className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-slate-800/50 p-3 rounded-lg">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Title</span>
+                      <span className="text-sm font-semibold text-white block line-clamp-1">{parsedPreview.title}</span>
+                    </div>
+                    <div className="bg-slate-800/50 p-3 rounded-lg">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Date & Time</span>
+                      <span className="text-sm font-medium text-indigo-300 block">
+                        {formatHumanDate(parsedPreview.date)} · {parsedPreview.time}
+                      </span>
+                    </div>
+                    <div className="bg-slate-800/50 p-3 rounded-lg">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Venue</span>
+                      <span className="text-sm font-medium text-slate-200 block line-clamp-1">{parsedPreview.venue}</span>
+                    </div>
+                    <div className="bg-slate-800/50 p-3 rounded-lg">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Category & Priority</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-500/15 text-indigo-300">
+                          {parsedPreview.category}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${parsedPreview.urgency === 'Urgent' ? 'bg-red-500/15 text-red-300' : 'bg-slate-700 text-slate-300'}`}>
+                          {parsedPreview.urgency}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {parsedPreview.actionItems && parsedPreview.actionItems.length > 0 && (
+                    <div className="bg-slate-800/30 p-3 rounded-lg text-xs text-slate-400 mb-4">
+                      <span className="text-slate-500 font-semibold text-[10px] uppercase block mb-1">Actions</span>
+                      <ul className="space-y-0.5">
+                        {parsedPreview.actionItems.map((item, idx) => (
+                          <li key={idx} className="flex items-center gap-1.5">
+                            <Icon name="check" className="w-3 h-3 text-indigo-400 shrink-0" />
+                            <span className="text-slate-300">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => setParsedPreview(null)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-400 text-xs font-medium cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleConfirmSaveNotice()}
+                      className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Icon name="check" className="w-4 h-4" />
+                      <span>Add Notice</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* SECTION 2: Unified Utility Bar */}
+            <section className="space-y-3">
+
+              {/* Single row: Search + Status + View Toggle + Sort */}
+              <div className="glass-card rounded-xl px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3">
+                
+                {/* Search */}
+                <div className="relative flex-1 max-w-sm">
+                  <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search notices…"
+                    className="w-full rounded-lg bg-slate-900/60 border border-slate-700/50 pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 transition-all"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white cursor-pointer">
+                      <Icon name="x" className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Spacer */}
+                <div className="hidden lg:block flex-1"></div>
+
+                {/* Status Filter Pills */}
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-900/50 text-xs">
+                  {[
+                    { key: 'All', label: 'All' },
+                    { key: 'Today', label: 'Today' },
+                    { key: 'Upcoming', label: 'Upcoming' },
+                    { key: 'Urgent', label: 'Urgent' },
+                  ].map(st => (
+                    <button
+                      key={st.key}
+                      onClick={() => setActiveStatusFilter(st.key)}
+                      className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${activeStatusFilter === st.key ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-900/50 text-xs">
+                  <button
+                    onClick={() => { setCurrentView('list'); sound.playChime('pop'); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${currentView === 'list' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    <Icon name="list" className="w-3.5 h-3.5" />
+                    <span>List</span>
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('calendar'); sound.playChime('pop'); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${currentView === 'calendar' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    <Icon name="calendar" className="w-3.5 h-3.5" />
+                    <span>Calendar</span>
+                  </button>
+                </div>
+
+                {/* Sort */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="rounded-lg bg-slate-900/60 border border-slate-700/50 px-2.5 py-1.5 text-xs text-slate-400 focus:outline-none focus:border-indigo-500/60 cursor-pointer appearance-none pr-7"
+                  >
+                    <option value="dateAsc">Earliest</option>
+                    <option value="dateDesc">Latest</option>
+                    <option value="urgency">Priority</option>
+                    <option value="newest">Newest</option>
+                  </select>
+                  <Icon name="chevronDown" className="w-3 h-3 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Category Tabs — clean horizontal scroll */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                {categories.map((cat) => {
+                  const isActive = activeCategory === cat;
+                  const count = categoryCounts[cat] || 0;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => { setActiveCategory(cat); sound.playChime('pop'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isActive
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <span>{cat}</span>
+                      <span className={`text-[10px] font-mono ${isActive ? 'text-indigo-200' : 'text-slate-500'}`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* SECTION 3: Content Body (Feed List or Interactive Calendar) */}
+            {currentView === 'list' ? (
+              /* --- LIST VIEW --- */
+              <section>
+                {filteredNotices.length === 0 ? (
+                  <div className="glass-card rounded-xl p-16 text-center">
+                    <Icon name="info" className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+                    <h3 className="text-sm font-semibold text-slate-300">No notices match your filters</h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Try clearing your search or switching categories.
+                    </p>
+                    <button
+                      onClick={() => { setSearchQuery(''); setActiveCategory('All'); setActiveStatusFilter('All'); }}
+                      className="mt-4 px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                    {filteredNotices.map((notice) => {
+                      const catStyle = getCategoryStyles(notice.category);
+                      const status = getNoticeStatus(notice.date);
+                      const isExpanded = expandedOriginalId === notice.id;
+
+                      return (
+                        <div
+                          key={notice.id}
+                          className={`glass-card glass-card-hover rounded-xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 ${
+                            notice.completed ? 'opacity-50' : ''
+                          } ${status.type === 'today' && !notice.completed ? 'border-l-4 border-l-indigo-500' : ''}`}
+                        >
+                          {/* Top Row: Category & Status */}
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-3">
+                              <span className="px-2 py-0.5 rounded-md text-[11px] font-medium text-indigo-300 bg-indigo-500/10">
+                                {notice.category}
+                              </span>
+
+                              <div className="flex items-center gap-1.5">
+                                {notice.urgency === 'Urgent' && (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-red-500/15 text-red-300">
+                                    Urgent
+                                  </span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                                  status.type === 'today'
+                                    ? 'bg-indigo-500/15 text-indigo-300 font-semibold'
+                                    : status.type === 'tomorrow'
+                                    ? 'bg-amber-500/10 text-amber-300'
+                                    : status.type === 'expired'
+                                    ? 'text-slate-500'
+                                    : 'text-slate-400'
+                                }`}>
+                                  {status.label}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Title */}
+                            <h3 className={`text-[15px] font-semibold text-white mb-2.5 leading-snug ${notice.completed ? 'line-through text-slate-500' : ''}`}>
+                              {notice.title}
+                            </h3>
+
+                            {/* Date, Time, Venue */}
+                            <div className="space-y-1 mb-4 text-xs">
+                              <div className="flex items-center gap-2 text-slate-300">
+                                <Icon name="calendar" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                <span>{formatHumanDate(notice.date)}</span>
+                                <span className="text-slate-600">·</span>
+                                <Icon name="clock" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                <span>{notice.time}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <Icon name="mapPin" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                <span className="truncate">{notice.venue}</span>
+                              </div>
+                            </div>
+
+                            {/* Summary */}
+                            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                              {notice.summary}
+                            </p>
+
+                            {/* Action Items */}
+                            {notice.actionItems && notice.actionItems.length > 0 && (
+                              <div className="mb-4 bg-slate-900/40 p-2.5 rounded-lg text-[11px] space-y-1">
+                                {notice.actionItems.map((act, i) => (
+                                  <div key={i} className="flex items-start gap-1.5 text-slate-400">
+                                    <Icon name="check" className="w-3 h-3 text-indigo-400 mt-0.5 shrink-0" />
+                                    <span className="line-clamp-1">{act}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Original Text Toggle */}
+                            <div className="mb-3">
+                              <button
+                                onClick={() => setExpandedOriginalId(isExpanded ? null : notice.id)}
+                                className="text-[11px] text-slate-500 hover:text-indigo-300 flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <span>{isExpanded ? 'Hide original' : 'Show original message'}</span>
+                                <Icon name={isExpanded ? "chevronDown" : "chevronRight"} className="w-3 h-3" />
+                              </button>
+
+                              {isExpanded && (
+                                <div className="mt-2 p-3 rounded-lg bg-slate-950/60 border border-slate-800/60 text-[11px] text-slate-400 font-mono whitespace-pre-wrap max-h-36 overflow-y-auto">
+                                  {notice.originalText}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Footer */}
+                          <div className="pt-3 border-t border-slate-800/50 flex items-center justify-between text-slate-500">
+                            <button
+                              onClick={() => handleToggleComplete(notice.id)}
+                              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                                notice.completed
+                                  ? 'text-indigo-300 bg-indigo-500/10'
+                                  : 'hover:bg-slate-800/60 text-slate-400'
+                              }`}
+                            >
+                              <Icon name={notice.completed ? "checkCircle" : "check"} className="w-3.5 h-3.5" />
+                              <span>{notice.completed ? 'Done' : 'Mark done'}</span>
+                            </button>
+
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => handleDownloadICS(notice)} className="p-1.5 rounded-md hover:bg-slate-800/60 hover:text-indigo-300 transition-colors cursor-pointer" title="Export .ics">
+                                <Icon name="calendar" className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleCopySummary(notice)} className="p-1.5 rounded-md hover:bg-slate-800/60 hover:text-indigo-300 transition-colors cursor-pointer" title="Copy summary">
+                                <Icon name="copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleDeleteNotice(notice.id)} className="p-1.5 rounded-md hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer" title="Delete">
+                                <Icon name="trash" className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ) : (
+              /* --- INTERACTIVE CALENDAR VIEW --- */
+              <section className="glass-card rounded-2xl p-5 sm:p-6 border border-slate-800 shadow-2xl">
+                
+                {/* Calendar Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      <Icon name="calendar" className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-white">
+                        Campus Events & Deadline Calendar
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Visual month grid: Click any date to view all notices scheduled for that day.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-cyan-300">
+                      November 2026
+                    </span>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Urgent</span>
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Event</span>
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span> Academic</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Day of Week Headers */}
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center text-xs font-bold text-slate-400 mt-4 mb-2">
+                  <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                </div>
+
+                {/* Calendar Days Grid */}
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+                  {calendarDays.map((day, idx) => {
+                    const isSelected = selectedCalendarDate === day.dateStr;
+                    const hasNotices = day.notices.length > 0;
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setSelectedCalendarDate(day.dateStr);
+                          sound.playChime('pop');
+                        }}
+                        className={`min-h-[78px] sm:min-h-[96px] p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-slate-800/90 border-cyan-400 shadow-lg shadow-cyan-500/20'
+                            : day.isToday
+                            ? 'bg-rose-950/30 border-rose-500/60'
+                            : day.isCurrentMonth
+                            ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'
+                            : 'bg-slate-950/40 border-slate-900 opacity-40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-bold ${
+                            day.isToday
+                              ? 'text-rose-400 font-extrabold'
+                              : isSelected
+                              ? 'text-cyan-300 font-extrabold'
+                              : day.isCurrentMonth
+                              ? 'text-slate-200'
+                              : 'text-slate-600'
+                          }`}>
+                            {day.dayNum}
+                          </span>
+
+                          {day.isToday && (
+                            <span className="text-[9px] font-extrabold px-1 rounded bg-rose-500 text-white">
+                              TODAY
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Notice Dots / Micro chips */}
+                        <div className="space-y-1 mt-1">
+                          {day.notices.slice(0, 2).map((n) => {
+                            const isUrgent = n.urgency === 'Urgent';
+                            return (
+                              <div
+                                key={n.id}
+                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded truncate ${
+                                  isUrgent
+                                    ? 'bg-rose-500/30 text-rose-200 border border-rose-500/40'
+                                    : n.category === 'Event'
+                                    ? 'bg-purple-500/20 text-purple-300'
+                                    : 'bg-cyan-500/20 text-cyan-300'
+                                }`}
+                                title={n.title}
+                              >
+                                {n.title}
+                              </div>
+                            );
+                          })}
+                          {day.notices.length > 2 && (
+                            <span className="text-[9px] text-slate-400 font-bold block">
+                              +{day.notices.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Selected Day Agenda Drawer Below Calendar */}
+                <div className="mt-6 pt-5 border-t border-slate-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Icon name="clock" className="w-4 h-4 text-cyan-400" />
+                      <span>Agenda for {formatHumanDate(selectedCalendarDate)}</span>
+                    </h4>
+                    <span className="text-xs text-slate-400">
+                      {notices.filter(n => n.date === selectedCalendarDate).length} event(s) scheduled
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {notices.filter(n => n.date === selectedCalendarDate).length === 0 ? (
+                      <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400 text-center">
+                        No college notices or deadlines scheduled for this day. Free schedule!
+                      </div>
+                    ) : (
+                      notices.filter(n => n.date === selectedCalendarDate).map((n) => (
+                        <div
+                          key={n.id}
+                          className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-700/60 flex items-center justify-between gap-3"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">{n.title}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">
+                                {n.category}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              ⏰ {n.time} • 📍 {n.venue}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDownloadICS(n)}
+                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Icon name="download" className="w-3 h-3" />
+                              <span>.ICS</span>
+                            </button>
+                            <button
+                              onClick={() => handleCopySummary(n)}
+                              className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                            >
+                              <Icon name="copy" className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
+          </main>
+
+          {/* MODAL: Weekly Executive AI Summary Digest ("What do I need to know this week?") */}
+          {showDigestModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+              <div className="glass-modal max-w-2xl w-full rounded-2xl p-6 sm:p-7 border border-indigo-500/40 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+                
+                {/* Modal Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                      <Icon name="sparkles" className="w-6 h-6 text-amber-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        Weekly Executive Digest
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          Oct 31 – Nov 7, 2026
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        AI consolidated summary of all verified notices across college WhatsApp groups.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowDigestModal(false)}
+                    className="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white"
+                  >
+                    <Icon name="x" className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Briefing Stats Bar */}
+                <div className="grid grid-cols-3 gap-3 my-5">
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                    <span className="text-xl font-black text-rose-400">{weeklyDigest.urgentCount}</span>
+                    <span className="text-[11px] block text-slate-400 font-medium">Critical Deadlines</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                    <span className="text-xl font-black text-purple-400">{weeklyDigest.eventItems.length}</span>
+                    <span className="text-[11px] block text-slate-400 font-medium">Events & Clubs</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                    <span className="text-xl font-black text-cyan-400">{weeklyDigest.totalActive}</span>
+                    <span className="text-[11px] block text-slate-400 font-medium">Total Active Notices</span>
+                  </div>
+                </div>
+
+                {/* Briefing Sections */}
+                <div className="space-y-4 text-xs sm:text-sm">
+                  
+                  {/* Critical Action Needed */}
+                  <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/30 space-y-2">
+                    <h4 className="text-xs font-bold text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Icon name="flame" className="w-4 h-4 text-rose-400" />
+                      <span>Immediate Action Required (Next 48 Hours)</span>
+                    </h4>
+                    {weeklyDigest.urgentItems.length === 0 ? (
+                      <p className="text-xs text-slate-400">No urgent flags pending!</p>
+                    ) : (
+                      weeklyDigest.urgentItems.map(item => (
+                        <div key={item.id} className="flex items-start justify-between gap-2 border-b border-rose-500/10 pb-2 last:border-0 last:pb-0">
+                          <div>
+                            <strong className="text-white block font-semibold">{item.title}</strong>
+                            <span className="text-xs text-slate-300">
+                              Due: {formatHumanDate(item.date)} at {item.time} ({item.venue})
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/30 text-rose-200 shrink-0">
+                            URGENT
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Academic & Exams */}
+                  <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-500/30 space-y-2">
+                    <h4 className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Icon name="bookOpen" className="w-4 h-4 text-cyan-400" />
+                      <span>Academic & Examinations This Week</span>
+                    </h4>
+                    {weeklyDigest.academicItems.map(item => (
+                      <div key={item.id} className="flex items-start justify-between gap-2">
+                        <div>
+                          <strong className="text-slate-100 block font-semibold">{item.title}</strong>
+                          <span className="text-xs text-slate-400">{formatHumanDate(item.date)} • {item.venue}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Opportunities & Festivities */}
+                  <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-2">
+                    <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Icon name="sparkles" className="w-4 h-4 text-purple-400" />
+                      <span>Major Campus Opportunities & Clubs</span>
+                    </h4>
+                    {weeklyDigest.eventItems.map(item => (
+                      <div key={item.id} className="flex items-start justify-between gap-2">
+                        <div>
+                          <strong className="text-slate-100 block font-semibold">{item.title}</strong>
+                          <span className="text-xs text-slate-400">{formatHumanDate(item.date)} at {item.time} • {item.venue}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+
+                {/* Modal Footer */}
+                <div className="mt-6 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <p className="text-[11px] text-slate-400">
+                    💡 Perfect format to forward directly back into class WhatsApp groups.
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCopyWeeklyDigest}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                    >
+                      <Icon name={digestCopied ? "check" : "copy"} className="w-4 h-4" />
+                      <span>{digestCopied ? 'Copied to Clipboard!' : 'Copy WhatsApp Digest'}</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <footer className="mt-auto border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+            <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-medium text-slate-400">Campus Pulse • College Hackathon Edition</span>
+              </div>
+              <p>
+                Eliminating notice fatigue from WhatsApp spam & unorganized student chats.
+              </p>
+              <div className="flex items-center gap-4 text-slate-400">
+                <button onClick={handleResetDemoData} className="hover:text-cyan-300 transition-colors cursor-pointer">
+                  Reset Data
+                </button>
+                <span>•</span>
+                <span>Persistent LocalStorage</span>
+              </div>
+            </div>
+          </footer>
+
+        </div>
+      );
+    }
+
+    // Render React App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<CampusPulseApp />);
+  </script>
+</body>
+</html>
